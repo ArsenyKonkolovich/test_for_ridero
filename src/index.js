@@ -1,11 +1,13 @@
 import axios from "axios"
 import AdmZip from "adm-zip"
-import fs from "fs"
+import puppeteer from "puppeteer"
+import fsp from "node:fs/promises"
+import path from "path"
 
 const fileUrl =
-  "https://drive.google.com/u/0/uc?id=1Ve8-MjYpSKVIa7NqWpKJ1Oc85PSZTvZ0&export=download"
+  "https://drive.google.com/u/0/uc?id=1BWtmpFv997xXbKouqCRgoSX5-THEsxrt&export=download"
 
-const zipPath = "test"
+const pathForExtract = "test"
 
 const downloadZip = async (link) => {
   const response = await axios.head(link)
@@ -27,16 +29,47 @@ const downloadZip = async (link) => {
   }
 }
 
-const unzipAndSaveFiles = (zipBuffer) => {
+const unzipAndSaveFiles = (zipBuffer, pathForExtract) => {
   const zip = new AdmZip(zipBuffer)
-  zip.extractAllTo("test", true)
-  console.log('Файл распакован в "test"')
+  zip.extractAllTo(pathForExtract, true)
+  console.log(`Файл распакован в ${pathForExtract}`)
+}
+
+const readAndConvertToPDF = async (pathForExtract) => {
+  const fileList = await fsp.readdir(pathForExtract)
+  const htmlFileName = fileList.find((el) => path.extname(el) == ".html")
+  const htmlContent = await fsp.readFile(
+    path.join(process.cwd(), pathForExtract, htmlFileName),
+    "utf-8"
+  )
+
+  console.log(htmlContent)
+
+  const browser = await puppeteer.launch({
+    headless: "new",
+  })
+  const page = await browser.newPage()
+
+  await page.setContent(htmlContent)
+
+  const pdfOptions = {
+    path: "output.pdf",
+    format: "A4",
+  }
+
+  await page.pdf(pdfOptions)
+
+  await browser.close()
 }
 
 const downloadZipAndConvertToPDF = async (link) => {
-  await downloadZip(link).then((zipBuffer) => {
-    unzipAndSaveFiles(zipBuffer, zipPath)
-  })
+  await downloadZip(link)
+    .then((zipBuffer) => {
+      unzipAndSaveFiles(zipBuffer, pathForExtract)
+    })
+    .then(() => {
+      readAndConvertToPDF(pathForExtract)
+    })
 }
 
 downloadZipAndConvertToPDF(fileUrl)

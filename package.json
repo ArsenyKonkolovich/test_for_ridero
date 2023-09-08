@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "adm-zip": "^0.5.10",
-    "axios": "^1.5.0"
+    "axios": "^1.5.0",
+    "puppeteer": "^21.1.1",
+    "puppeteer-core": "^21.1.1"
   }
 }
