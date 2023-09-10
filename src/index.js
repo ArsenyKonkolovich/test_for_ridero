@@ -3,13 +3,34 @@ import AdmZip from "adm-zip"
 import puppeteer from "puppeteer"
 import fsp from "node:fs/promises"
 import path from "path"
-import cheerio from "cheerio"
-import logStep from "./logger.js"
+import { logStep, logError } from "../logger/logger.js"
+import processHtml from "./utils.js"
 
 const fileUrl =
   "https://drive.google.com/u/0/uc?id=1yMqrPcSflqL3vaS0PwBWvc8P6PqkL9UY&export=download"
 
 const pathForExtract = "test"
+
+let fileName
+
+const downloadZipAndConvertToPDF = async (link) => {
+  const startTime = process.hrtime()
+  const startMemoryUsage = process.memoryUsage()
+
+  try {
+    const zipBuffer = await downloadZip(link)
+    await unzipAndSaveFiles(zipBuffer, pathForExtract)
+    await readAndConvertToPDF(pathForExtract)
+
+    const endTime = process.hrtime(startTime)
+    const memoryUsage = process.memoryUsage(startMemoryUsage)
+
+    logStep("Название, время, память", endTime, memoryUsage, fileName)
+  } catch (error) {
+    console.log(error)
+    logError(error, link)
+  }
+}
 
 const downloadZip = (link) => {
   return new Promise(async (resolve, reject) => {
@@ -54,14 +75,11 @@ const unzipAndSaveFiles = (zipBuffer, pathForExtract) => {
 const readAndConvertToPDF = async (pathForExtract) => {
   const zipFileList = await fsp.readdir(pathForExtract)
   const htmlFileName = zipFileList.find((el) => path.extname(el) == ".html")
-  const resoursesFileList = await fsp.readdir(
-    `./${pathForExtract}/${zipFileList[1]}`
-  )
+  fileName = htmlFileName
+  const resoursesFolderPath = path.join(`./${pathForExtract}/${zipFileList[1]}`)
+  const resoursesFileList = await fsp.readdir(resoursesFolderPath)
   const cssFileName = resoursesFileList.find((el) => path.extname(el) == ".css")
-  const cssFilePath = path.join(
-    `./${pathForExtract}/${zipFileList[1]}`,
-    cssFileName
-  )
+  const cssFilePath = path.join(resoursesFolderPath, cssFileName)
   const htmlContent = await fsp.readFile(
     path.join(process.cwd(), pathForExtract, htmlFileName),
     "utf-8"
@@ -77,7 +95,7 @@ const readAndConvertToPDF = async (pathForExtract) => {
     await page.addStyleTag({ path: cssFilePath })
 
     const pdfOptions = {
-      path: "output.pdf",
+      path: `${path.basename(fileName, ".html")}.pdf`,
       format: "A4",
     }
 
@@ -85,60 +103,6 @@ const readAndConvertToPDF = async (pathForExtract) => {
 
     await browser.close()
   })
-}
-
-const getExtension = (filename) => {
-  return path.extname(filename).slice(1)
-}
-
-const processHtml = async (htmlContent, pathForExtract) => {
-  const $ = cheerio.load(htmlContent)
-  const imgElements = $("img")
-
-  const imagePromises = imgElements
-    .map(async (index, element) => {
-      const src = $(element).attr("src")
-      if (src) {
-        const imagePath = path.join(pathForExtract, src)
-        const imageData = await fsp.readFile(imagePath)
-        const base64Image = imageData.toString("base64")
-
-        const dataUri = `data:image/${getExtension(src)};base64,${base64Image}`
-
-        $(element).attr("src", dataUri)
-      }
-    })
-    .get()
-
-  await Promise.all(imagePromises)
-
-  const modifiedHtml = $.html()
-
-  return modifiedHtml
-}
-
-const downloadZipAndConvertToPDF = async (link) => {
-  const startTime = process.hrtime()
-  const startMemoryUsage = process.memoryUsage()
-
-  try {
-    const zipBuffer = await downloadZip(link)
-    await unzipAndSaveFiles(zipBuffer, pathForExtract)
-    await readAndConvertToPDF(pathForExtract)
-
-    const endTime = process.hrtime(startTime)
-    const memoryUsage = process.memoryUsage(startMemoryUsage)
-
-    console.log("Память в индексе", memoryUsage)
-
-    logStep(
-      "Общее время выполнения и потребление памяти",
-      endTime,
-      JSON.stringify(memoryUsage)
-    )
-  } catch (error) {
-    console.error("Ошибка:", error)
-  }
 }
 
 downloadZipAndConvertToPDF(fileUrl)
