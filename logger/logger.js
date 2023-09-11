@@ -1,7 +1,7 @@
 import pino from "pino"
 import path from "path"
 import pinoPretty from "pino-pretty"
-import convertBytes from "./logUtils.js"
+import { convertBytes, getCurrentTime } from "./logUtils.js"
 
 const logFilePath = path.join(process.cwd(), "app.log")
 
@@ -17,6 +17,7 @@ const logger = pino(
 
 export const logStep = async (stepName, elapsedTime, memoryUsage, fileName) => {
   const convertedMemoryUsed = convertBytes(memoryUsage.heapUsed)
+  logger.info(getCurrentTime())
   logger.info(`Название распакованного html файла: ${fileName}`)
   logger.info(
     `${stepName} - Время выполнения для ${fileName}: ${(
