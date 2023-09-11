@@ -6,8 +6,7 @@ import path from "path"
 import { logStep, logError } from "../logger/logger.js"
 import { processHtml, isZip } from "./utils.js"
 
-const fileUrl =
-  "https://drive.google.com/u/0/uc?id=1yMqrPcSflqL3vaS0PwBWvc8P6PqkL9UY&export=download"
+const fileUrl = "вствьте сюда сслыку на скачивание"
 
 const downloadZipAndConvertToPDF = async (link) => {
   const startTime = process.hrtime()
