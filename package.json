@@ -10,10 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/swagger": "^8.10.0",
     "adm-zip": "^0.5.10",
     "axios": "^1.5.0",
     "cheerio": "^1.0.0-rc.12",
     "fastify": "^4.23.0",
+    "fastify-swagger": "^5.2.0",
+    "fastify-swagger-ui": "^1.0.1",
     "pino": "^8.15.1",
     "pino-pretty": "^10.2.0",
     "puppeteer": "^21.1.1",
