@@ -1,45 +1,71 @@
 import Fastify from "fastify"
 import fastifySwagger from "@fastify/swagger"
+import fastifySwaggerUi from "@fastify/swagger-ui"
 import downloadZipAndConvertToPDF from "../src/index.js"
 import schema from "./schema.js"
 
-const fastify = Fastify({
-  logger: true,
-})
+export default async function initApp() {
+  const fastify = Fastify({
+    logger: true,
+  })
 
-fastify.register(fastifySwagger, {
-  exposeRoute: true,
-  routePrefix: "/docs",
-  swagger: {
-    info: {
-      title: "Pdf covert API",
-      description: "Сервис для конвертации html в pdf.",
-      version: "1.0.0",
+  await fastify.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: "Convert html to pdf",
+        description: "API сервиса для конвертации html в pdf",
+        version: process.env.npm_package_version || "1.0.0",
+      },
+      tags: [
+        {
+          name: "HTML to PDF",
+          description: "Конвертация html в pdf",
+        },
+      ],
+      components: {},
     },
-  },
-})
+  })
 
-fastify.route({
-  schema: schema,
-  method: "POST",
-  url: "/",
-  handler: async (request, reply) => {
-    try {
-      const { url } = request.body
+  await fastify.register(fastifySwaggerUi, {
+    routePrefix: "/docs",
+    uiConfig: {
+      docExpansion: "full",
+      deepLinking: false,
+    },
+    uiHooks: {
+      onRequest: function (request, reply, next) {
+        next()
+      },
+      preHandler: function (request, reply, next) {
+        next()
+      },
+    },
+    staticCSP: true,
+    transformStaticCSP: (header) => header,
+    transformSpecification: (swaggerObject) => {
+      return swaggerObject
+    },
+    transformSpecificationClone: true,
+  })
 
-      const htmlFileName = await downloadZipAndConvertToPDF(url)
+  fastify.post("/", {
+    schema,
+    handler: async (request, reply) => {
+      try {
+        const { url } = request.body
 
-      return {
-        success: true,
-        message: `Конвертация произошла успешно, файл доступен в ${htmlFileName[1]}`,
+        const htmlFileName = await downloadZipAndConvertToPDF(url)
+
+        return {
+          success: true,
+          message: `Конвертация произошла успешно, файл доступен в ${htmlFileName[1]}`,
+        }
+      } catch (error) {
+        reply.status(500).send({ success: false, message: error.message })
       }
-    } catch (error) {
-      reply.status(500).send({ success: false, message: error })
-    }
-  },
-})
+    },
+  })
 
-const startServer = () => {
   fastify.listen({ port: 3000 }, (err, address) => {
     if (err) {
       fastify.log.error(err)
@@ -47,8 +73,6 @@ const startServer = () => {
     }
     console.log(`Сервер запущен на ${address}`)
   })
-
-  fastify.swagger()
 }
 
-startServer()
+initApp()

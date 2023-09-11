@@ -1,8 +1,10 @@
 export default {
+  description: "Request a JSON",
+  tags: ["HTML to PDF"],
   body: {
     type: "object",
     properties: {
-      url: { type: "string" },
+      url: { type: "string", description: "Нужна строка" },
     },
   },
   response: {

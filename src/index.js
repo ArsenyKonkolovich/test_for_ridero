@@ -23,6 +23,7 @@ export default async (link) => {
     logStep("Название, время, память", endTime, memoryUsage, htmlFileName[0])
   } catch (error) {
     logError(error, link)
+    throw error
   }
   return htmlFileName
 }
