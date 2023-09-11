@@ -39,5 +39,5 @@ export const isZip = (contentDisposition) => {
 
   const extension = path.extname(match[1])
 
-  return extension == ".zip" ? true : false
+  return extension === ".zip"
 }
