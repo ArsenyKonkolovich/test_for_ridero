@@ -6,7 +6,7 @@ const getExtension = (filename) => {
   return path.extname(filename).slice(1)
 }
 
-export default async (htmlContent, pathForExtract) => {
+export const processHtml = async (htmlContent, pathForExtract) => {
   const $ = cheerio.load(htmlContent)
   const imgElements = $("img")
 
@@ -30,4 +30,14 @@ export default async (htmlContent, pathForExtract) => {
   const modifiedHtml = $.html()
 
   return modifiedHtml
+}
+
+export const isZip = (contentDisposition) => {
+  const inputString = contentDisposition
+
+  const match = inputString.match(/filename="([^"]+)"/)
+
+  const extension = path.extname(match[1])
+
+  return extension == ".zip" ? true : false
 }
