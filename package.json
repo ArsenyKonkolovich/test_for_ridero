@@ -2,7 +2,7 @@
   "name": "test_for_ridero",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "server/server.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,6 +13,7 @@
     "adm-zip": "^0.5.10",
     "axios": "^1.5.0",
     "cheerio": "^1.0.0-rc.12",
+    "fastify": "^4.23.0",
     "pino": "^8.15.1",
     "pino-pretty": "^10.2.0",
     "puppeteer": "^21.1.1",

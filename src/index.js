@@ -6,24 +6,25 @@ import path from "path"
 import { logStep, logError } from "../logger/logger.js"
 import { processHtml, isZip } from "./utils.js"
 
-const fileUrl = "вствьте сюда сслыку на скачивание"
-
-const downloadZipAndConvertToPDF = async (link) => {
+export default async (link) => {
   const startTime = process.hrtime()
   const startMemoryUsage = process.memoryUsage()
+
+  let htmlFileName
 
   try {
     const zipBuffer = await downloadZip(link)
     const extractedFiles = await unzipAndSaveFiles(zipBuffer)
-    const htmlFileName = await readAndConvertToPDF(extractedFiles)
+    htmlFileName = await readAndConvertToPDF(extractedFiles)
 
     const endTime = process.hrtime(startTime)
     const memoryUsage = process.memoryUsage(startMemoryUsage)
 
-    logStep("Название, время, память", endTime, memoryUsage, htmlFileName)
+    logStep("Название, время, память", endTime, memoryUsage, htmlFileName[0])
   } catch (error) {
     logError(error, link)
   }
+  return htmlFileName
 }
 
 const downloadZip = (link) => {
@@ -95,6 +96,8 @@ const readAndConvertToPDF = async (pathForExtract) => {
   })
   const page = await browser.newPage()
 
+  const pdfPath = `${path.basename(htmlFileName, ".html")}.pdf`
+
   await processHtml(htmlContent, pathForExtract)
     .then(async (modifiedHtml) => {
       await page.setContent(modifiedHtml)
@@ -102,7 +105,7 @@ const readAndConvertToPDF = async (pathForExtract) => {
       await page.addStyleTag({ path: cssFilePath })
 
       const pdfOptions = {
-        path: `${path.basename(htmlFileName, ".html")}.pdf`,
+        path: pdfPath,
         format: "A4",
       }
 
@@ -116,7 +119,5 @@ const readAndConvertToPDF = async (pathForExtract) => {
       throw new Error(e)
     })
 
-  return htmlFileName
+  return [htmlFileName, pdfPath]
 }
-
-downloadZipAndConvertToPDF(fileUrl)
